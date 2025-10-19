@@ -87,6 +87,16 @@ class LLMService:
         response = self.llm.invoke(messages)
         return response.content
     
+    async def ainvoke(self, system_prompt: str, user_message: str) -> str:
+        """Async invoke the LLM with system and user messages."""
+        messages = [
+            SystemMessage(content=system_prompt),
+            HumanMessage(content=user_message),
+        ]
+        
+        response = await self.llm.ainvoke(messages)
+        return response.content
+    
     def invoke_structured(self, system_prompt: str, user_message: str, 
                          response_format: Optional[Dict[str, Any]] = None) -> str:
         """

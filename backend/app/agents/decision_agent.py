@@ -167,9 +167,11 @@ KEY REASONS:
 MACRO IMPACT:
 [1-2 sentences on how VIX, Fed rates, inflation, GDP, or unemployment specifically affect this investment decision and timing]
 
-ENTRY PRICE: $[price]
-TARGET PRICES: $[price1], $[price2]
-STOP LOSS: $[price]
+Example: "Current low VIX at 15.2 and stable Fed rates at 5.25% support risk-on sentiment, while 2.1% inflation suggests moderate economic growth that favors growth stocks like this one."
+
+ENTRY PRICE: $[price] (should be close to current price)
+TARGET PRICES: $[price1], $[price2] (realistic upside targets based on technical analysis, support/resistance levels, and fundamental valuation - must be higher than entry price)
+STOP LOSS: $[price] (risk management level below entry price)
 
 ENTRY PRICE STRATEGY:
 - If current price < entry price: Buy immediately
@@ -187,16 +189,38 @@ TARGET STRATEGY:
 - Second target: [specific strategy]
 - Exit triggers: [specific conditions]
 
+IMPORTANT TARGET PRICE GUIDELINES:
+- Use the current price and technical analysis (support/resistance levels, moving averages) to set realistic targets
+- Consider the investment horizon: short-term (weeks) = smaller targets, long-term (years) = larger targets
+- Target prices should be based on technical levels, not arbitrary numbers
+- For example: if current price is $100, targets might be $105 (short-term), $120 (medium-term), $150 (long-term)
+
 REASONING:
-[2-3 paragraphs explaining your decision, weighting choices, why this horizon makes sense, and HOW THE MACROECONOMIC ENVIRONMENT influenced your recommendation. Cite specific indicators.]
+- Decision Rationale: [explain why this specific recommendation (BUY/HOLD/SELL) makes sense]
+- Weighting Justification: [explain why you chose these specific weights for fundamentals, technical, sentiment, macro]
+- Horizon Logic: [explain why this timeframe (short/medium/long-term) is appropriate]
+- Macro Environment Impact: [explain HOW the macroeconomic environment influenced this recommendation - cite specific indicators]
+
+Example:
+- Decision Rationale: This BUY recommendation is based on strong fundamentals showing 22% revenue growth and 15% profit margins, combined with bullish technical indicators including golden cross and RSI at 45.
+- Weighting Justification: Fundamentals get 40% weight due to strong financials, technical gets 30% for bullish signals, macro gets 20% for supportive environment, sentiment gets 10% as it's neutral.
+- Horizon Logic: The 2-5 year horizon allows for full realization of the company's AI transformation strategy while managing near-term volatility risks.
+- Macro Environment Impact: Current macro environment with VIX at 18.5 and Fed rates at 5.25% supports growth stocks, while 2.1% inflation suggests moderate economic growth that favors this sector.
 
 TECHNICAL SIGNALS:
 - SMA Analysis: [interpretation]
 - RSI: [interpretation]
 - MACD: [interpretation]
-- Volume: [interpretation]"""
+- Volume: [interpretation]
+
+Example:
+- SMA Analysis: Price above all major moving averages, bullish trend confirmed
+- RSI: 45, showing momentum but not overbought, room for upside
+- MACD: Bullish crossover, positive momentum building
+- Volume: Above average, confirming breakout with institutional interest"""
 
     response = llm.invoke(system_prompt, f"Analyze {symbol}:\n\n{context}")
+    print(f"🤖 AI Recommendation LLM Response:\n{response}\n{'='*50}")
     
     return parse_recommendation(response)
 
@@ -266,9 +290,11 @@ KEY REASONS:
 MACRO IMPACT:
 [1-2 sentences on how the current macro environment (cite specific indicators) affects this recommendation for a {style} investor]
 
-ENTRY PRICE: $[price]
-TARGET PRICES: $[price1], $[price2]
-STOP LOSS: $[price]
+Example: "For a {style} investor, the current macro environment with VIX at 18.5 and Fed rates at 5.25% [supports/requires caution for] this investment strategy, as [explain specific impact on {style} style]."
+
+ENTRY PRICE: $[price] (should be close to current price)
+TARGET PRICES: $[price1], $[price2] (realistic upside targets based on technical analysis, support/resistance levels, and fundamental valuation - must be higher than entry price)
+STOP LOSS: $[price] (risk management level below entry price)
 
 ENTRY PRICE STRATEGY:
 - If current price < entry price: Buy immediately
@@ -286,16 +312,38 @@ TARGET STRATEGY:
 - Second target: [specific strategy for {style} style]
 - Exit triggers: [specific conditions for {style} style]
 
+IMPORTANT TARGET PRICE GUIDELINES:
+- Use the current price and technical analysis (support/resistance levels, moving averages) to set realistic targets
+- Consider the investment horizon: short-term (weeks) = smaller targets, long-term (years) = larger targets
+- Target prices should be based on technical levels, not arbitrary numbers
+- For example: if current price is $100, targets might be $105 (short-term), $120 (medium-term), $150 (long-term)
+
 REASONING:
-[2-3 paragraphs explaining why this recommendation fits the {style} investment style, how you weighted the factors including macro, and the specific trade/investment plan. Explain how macro conditions support or challenge this strategy for a {style} investor.]
+- Style Alignment: [explain why this recommendation fits the {style} investment style]
+- Weighting Justification: [explain how you weighted the factors to match {style} risk tolerance and preferences]
+- Trade Plan: [explain the specific trade/investment plan for a {style} investor]
+- Macro Impact: [explain how macro conditions support or challenge this strategy for a {style} investor]
+
+Example:
+- Style Alignment: This recommendation aligns with {style} investment principles by [explain how it matches {style} risk tolerance and time horizon].
+- Weighting Justification: [Explain specific weightings that match {style} style - e.g., conservative gets higher macro weight, aggressive gets higher technical weight].
+- Trade Plan: [Specific entry/exit strategy tailored to {style} investor - position sizing, risk management, etc.].
+- Macro Impact: The macro environment [supports/challenges] this approach for {style} investors because [specific macro factors and their impact on {style} strategy].
 
 TECHNICAL SIGNALS:
 - SMA Analysis: [interpretation for {style} trader]
 - RSI: [interpretation]
 - MACD: [interpretation]
-- Volume: [interpretation]"""
+- Volume: [interpretation]
+
+Example:
+- SMA Analysis: [interpretation relevant to {style} trading style]
+- RSI: [interpretation with {style} risk tolerance]
+- MACD: [interpretation for {style} timeframe]
+- Volume: [interpretation for {style} position sizing]"""
 
     response = llm.invoke(system_prompt, f"Analyze {symbol} for a {style} investor:\n\n{context}")
+    print(f"🤖 User ({style}) Recommendation LLM Response:\n{response}\n{'='*50}")
     
     return parse_recommendation(response)
 
@@ -381,8 +429,18 @@ def parse_recommendation(text: str) -> Dict:
     reasons_section = re.search(r'KEY REASONS:(.*?)(?=MACRO IMPACT:|ENTRY PRICE:|TARGET PRICES:|REASONING:|$)', text, re.DOTALL)
     if reasons_section:
         reasons_text = reasons_section.group(1)
+        # Try multiple formats: single dash, double dash, and asterisk
         reasons = [r.strip('- ').strip() for r in reasons_text.split('\n') if r.strip().startswith('-')]
+        if not reasons:
+            # Fallback: try double dash format
+            reasons = [r.strip('-- ').strip() for r in reasons_text.split('\n') if r.strip().startswith('--')]
+        if not reasons:
+            # Fallback: try asterisk format (AI often uses this)
+            reasons = [r.strip('* ').strip() for r in reasons_text.split('\n') if r.strip().startswith('*')]
         rec['key_reasons'] = [r for r in reasons if r][:4]  # Max 4 reasons
+        print(f"✓ Extracted key reasons: {rec['key_reasons']}")
+    else:
+        print(f"⚠️ No key reasons found in LLM response")
     
     # Extract macro impact
     macro_impact_match = re.search(r'MACRO IMPACT:(.*?)(?=ENTRY PRICE:|TARGET PRICES:|REASONING:|$)', text, re.DOTALL)
@@ -393,31 +451,50 @@ def parse_recommendation(text: str) -> Dict:
     entry_match = re.search(r'ENTRY PRICE:\s*\$?([0-9.]+)', text)
     if entry_match:
         rec['entry_price'] = float(entry_match.group(1))
+        print(f"✓ Extracted entry price: ${rec['entry_price']:.2f}")
+    else:
+        print(f"⚠️ No entry price found in LLM response")
     
     # Extract target prices with timeframes
     targets_match = re.search(r'TARGET PRICES?:\s*([^\n]+)', text)
     if targets_match:
         targets_text = targets_match.group(1)
         # Extract multiple target prices from text like "$459.00 (3 years), $490.00 (5 years)"
-        # Look for patterns like $459.00, $490.00, etc.
-        price_pattern = r'\$?([0-9]+\.?[0-9]*)'
+        # Look for patterns like $459.00, $1,050.00, etc. - but exclude timeframes in parentheses
+        price_pattern = r'\$([0-9,]+\.?[0-9]*)'
         prices = re.findall(price_pattern, targets_text)
-        # Filter out very small numbers that are likely timeframes or other data
-        # Also filter out numbers that are too close to entry price (likely timeframes)
-        entry_price = rec.get('entry_price', 0)
-        targets = []
-        for p in prices:
-            price_val = float(p)
-            # Only include prices that are significantly different from entry price
-            # and are reasonable target prices (> $10 and > 5% different from entry)
-            if price_val > 10 and (entry_price == 0 or abs(price_val - entry_price) / entry_price > 0.05):
-                targets.append(price_val)
         
-        # If we still don't have targets, try a more permissive approach
-        if not targets and prices:
-            targets = [float(p) for p in prices if float(p) > 10]
+        # Also try to find prices without $ sign but exclude timeframes
+        # Look for numbers that are likely prices (not in parentheses and reasonable values)
+        fallback_pattern = r'(?<!\()\b([0-9,]+\.?[0-9]*)\b(?!\s*(?:years?|months?|weeks?|days?|hours?|minutes?))'
+        fallback_prices = re.findall(fallback_pattern, targets_text)
+        
+        # Combine both approaches
+        all_prices = prices + fallback_prices
+        
+        # Convert all extracted prices to floats (remove commas first)
+        targets = [float(p.replace(',', '')) for p in all_prices]
+        
+        # Remove duplicates while preserving order
+        seen = set()
+        targets = [x for x in targets if not (x in seen or seen.add(x))]
         
         rec['targets'] = targets[:3]  # Max 3 targets
+        print(f"✓ Extracted target prices: {rec['targets']}")
+    else:
+        print(f"⚠️ No target prices found in LLM response")
+    
+    # Final validation: Ensure target prices are reasonable
+    if rec.get('targets') and rec.get('entry_price'):
+        entry_price = rec['entry_price']
+        validated_targets = []
+        for target in rec['targets']:
+            # Target should be higher than entry price (at least 0.5% higher for very short-term trades) and not more than 10x entry price
+            if target > entry_price * 1.005 and target < entry_price * 10:
+                validated_targets.append(target)
+            else:
+                print(f"⚠️ Filtered out unrealistic target price: ${target:.2f} (entry: ${entry_price:.2f}) - must be > ${entry_price * 1.005:.2f} and < ${entry_price * 10:.2f}")
+        rec['targets'] = validated_targets
     
     # Fallback: If no targets found in TARGET PRICES section, try to extract from reasoning
     if not rec['targets'] or len(rec['targets']) < 2:
@@ -425,15 +502,19 @@ def parse_recommendation(text: str) -> Dict:
         reasoning_text = rec.get('reasoning', '')
         if reasoning_text:
             # Look for patterns like "targeting $459-$490" or "target $459, $490"
-            reasoning_targets = re.findall(r'target(?:ing)?\s*\$?([0-9]+\.?[0-9]*)(?:[-\s]*\$?([0-9]+\.?[0-9]*))?', reasoning_text, re.IGNORECASE)
+            reasoning_targets = re.findall(r'target(?:ing)?\s*\$?([0-9,]+\.?[0-9]*)(?:[-\s]*\$?([0-9,]+\.?[0-9]*))?', reasoning_text, re.IGNORECASE)
             if reasoning_targets:
                 targets = []
                 for match in reasoning_targets:
                     for price_str in match:
-                        if price_str and float(price_str) > 10:
-                            targets.append(float(price_str))
+                        if price_str:
+                            targets.append(float(price_str.replace(',', '')))
                 if targets:
+                    # Remove duplicates while preserving order
+                    seen = set()
+                    targets = [x for x in targets if not (x in seen or seen.add(x))]
                     rec['targets'] = targets[:3]
+                    print(f"✓ Extracted fallback target prices: {rec['targets']}")
     
     # Extract stop loss
     stop_match = re.search(r'STOP LOSS:\s*\$?([0-9.]+)', text)

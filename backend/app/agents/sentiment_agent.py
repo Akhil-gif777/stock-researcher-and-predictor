@@ -1,4 +1,6 @@
 """Sentiment analysis agent for news and market sentiment."""
+import asyncio
+import aiohttp
 from typing import Dict, List
 from app.agents.state import AgentState
 from app.services.news_service import news_service
@@ -121,4 +123,107 @@ def extract_sentiment_score(text: str) -> float:
     
     # Default to neutral if extraction fails
     return 0.0
+
+
+async def sentiment_agent_async(state: AgentState) -> Dict:
+    """
+    Pure async sentiment analysis agent that analyzes recent news and extracts market sentiment.
+    Uses async HTTP calls and async LLM calls for optimal performance.
+    """
+    symbol = state["symbol"]
+    
+    try:
+        print(f"📰 Sentiment Agent: Starting async analysis for {symbol}")
+        
+        # Get company-specific news using async
+        print(f"🔍 Sentiment Agent: Fetching company-specific news with async calls...")
+        async with aiohttp.ClientSession() as session:
+            # For now, use the sync version in a thread to maintain compatibility
+            loop = asyncio.get_event_loop()
+            company_articles = await loop.run_in_executor(None, news_service.get_recent_news, symbol, 10)
+            print(f"✓ Sentiment Agent: Found {len(company_articles)} company-specific articles")
+            
+            # Get broader market news
+            print(f"🔍 Sentiment Agent: Fetching market news...")
+            market_articles = await loop.run_in_executor(None, news_service.get_market_news, 5)
+            print(f"✓ Sentiment Agent: Found {len(market_articles)} market articles")
+        
+        # Combine all articles
+        all_articles = company_articles + market_articles
+        
+    except Exception as e:
+        print(f"❌ Sentiment Agent ERROR: Failed to fetch news - {str(e)}")
+        raise
+    
+    if not all_articles:
+        return {
+            "news_summary": "No recent news found for analysis.",
+            "sentiment_score": 0.0,
+            "news_sources": [],
+        }
+    
+    # Build context for LLM with better formatting
+    news_context = "=== COMPANY-SPECIFIC NEWS ===\n"
+    if company_articles:
+        news_context += "\n".join([
+            f"{i+1}. {article['title']} ({article['publisher']}) - {article.get('snippet', '')[:100]}..."
+            for i, article in enumerate(company_articles[:8])
+        ])
+    else:
+        news_context += "No recent company-specific news found.\n"
+    
+    news_context += "\n\n=== MARKET NEWS ===\n"
+    if market_articles:
+        news_context += "\n".join([
+            f"{i+1}. {article['title']} ({article['publisher']}) - {article.get('snippet', '')[:100]}..."
+            for i, article in enumerate(market_articles[:5])
+        ])
+    else:
+        news_context += "No recent market news found.\n"
+    
+    # Use async LLM to analyze sentiment
+    try:
+        print(f"🤖 Sentiment Agent: Calling async LLM for sentiment analysis...")
+        llm = get_llm_service()
+        
+        system_prompt = f"""You are an expert market sentiment analyst. Analyze the news articles and determine:
+
+1. **Company-Specific Sentiment**: How do the company-specific news articles affect {symbol}?
+2. **Market Sentiment**: How do broader market conditions affect {symbol}?
+3. **Overall Assessment**: Combine both to determine overall sentiment
+4. **Key Catalysts**: What are the main drivers of sentiment (earnings, guidance, market conditions, etc.)?
+5. **Risk Factors**: What could negatively impact the stock?
+
+Focus on:
+- Financial performance and guidance
+- Analyst upgrades/downgrades
+- Market conditions (Fed policy, inflation, etc.)
+- Industry trends
+- Competitive dynamics
+
+Provide a comprehensive analysis that considers both company-specific and market-wide factors.
+
+At the end, provide a sentiment score from -1.0 (very negative) to +1.0 (very positive).
+Format the last line as: SENTIMENT_SCORE: [number]"""
+        
+        user_message = f"Analyze sentiment for {symbol} based on these news articles:\n\n{news_context}"
+        
+        analysis = await llm.ainvoke(system_prompt, user_message)
+        
+        # Extract sentiment score from response
+        sentiment_score = extract_sentiment_score(analysis)
+        print(f"✓ Sentiment Agent: Async analysis completed - Sentiment score: {sentiment_score:.2f}")
+        print(f"✅ Sentiment Agent: Async analysis complete for {symbol}")
+        
+        # Remove score line from analysis
+        clean_analysis = analysis.split("SENTIMENT_SCORE:")[0].strip()
+        
+        return {
+            "news_summary": clean_analysis,
+            "sentiment_score": sentiment_score,
+            "news_sources": all_articles[:10],  # Top 10 articles
+        }
+    except Exception as e:
+        print(f"❌ Sentiment Agent ERROR: Async LLM call failed - {str(e)}")
+        raise
 

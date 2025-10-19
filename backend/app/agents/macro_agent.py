@@ -1,4 +1,6 @@
 """Macro agent for analyzing macroeconomic indicators."""
+import asyncio
+import aiohttp
 from typing import Dict
 from app.agents.state import AgentState
 from app.services.macro_service import macro_service
@@ -209,4 +211,92 @@ Consider the current macroeconomic conditions when making investment decisions. 
         analysis += "Lower risk environment supports more aggressive positioning in growth opportunities."
     
     return analysis
+
+
+async def macro_agent_async(state: AgentState) -> Dict:
+    """
+    Pure async macro agent that analyzes macroeconomic environment and assesses market risk.
+    Uses async HTTP calls and async LLM calls for optimal performance.
+    """
+    symbol = state["symbol"]
+    
+    try:
+        print(f"🌐 Macro Agent: Starting async macroeconomic analysis")
+        
+        # Get macro indicators using async
+        print(f"📊 Macro Agent: Fetching economic indicators with async calls...")
+        async with aiohttp.ClientSession() as session:
+            # For now, use the sync version in a thread to maintain compatibility
+            loop = asyncio.get_event_loop()
+            indicators = await loop.run_in_executor(None, macro_service.get_macro_indicators)
+            
+            # Log the indicators
+            vix = indicators.get('vix')
+            fed_rate = indicators.get('fed_rate')
+            gdp = indicators.get('gdp_growth')
+            cpi = indicators.get('inflation_cpi')
+            unemployment = indicators.get('unemployment')
+            
+            print(f"✓ Macro Agent: Retrieved indicators:")
+            print(f"  - VIX: {vix if vix else 'N/A'}")
+            print(f"  - Fed Rate: {fed_rate}%" if fed_rate else "  - Fed Rate: N/A")
+            print(f"  - GDP Growth: {gdp:.2f}%" if gdp else "  - GDP Growth: N/A")
+            print(f"  - CPI Inflation: {cpi:.2f}%" if cpi else "  - CPI Inflation: N/A")
+            print(f"  - Unemployment: {unemployment:.2f}%" if unemployment else "  - Unemployment: N/A")
+        
+        # Build context for LLM
+        context = build_macro_context(indicators)
+        
+        # Get async LLM analysis
+        print(f"🤖 Macro Agent: Analyzing macroeconomic environment with async LLM...")
+        llm = get_llm_service()
+        
+        system_prompt = """You are a macroeconomic analyst. Analyze the current economic environment and its implications for stock market investing.
+
+Given the macroeconomic indicators, assess:
+1. Overall market risk level (LOW, MEDIUM, HIGH)
+2. Key economic trends and concerns
+3. Impact on stock market outlook
+4. Specific considerations for individual stock analysis
+
+Provide your analysis in this format:
+
+RISK LEVEL: [LOW/MEDIUM/HIGH]
+
+ECONOMIC ENVIRONMENT:
+[2-3 paragraphs analyzing the current macroeconomic conditions, trends, and their implications for the stock market]
+
+KEY FACTORS:
+- [Factor 1]
+- [Factor 2]
+- [Factor 3]
+
+INVESTMENT IMPLICATIONS:
+[Brief guidance on how these conditions should influence investment decisions]"""
+        
+        try:
+            analysis = await llm.ainvoke(system_prompt, context)
+        except Exception as e:
+            print(f"⚠️ Macro Agent: Async LLM analysis failed: {str(e)}, using default")
+            analysis = generate_default_macro_analysis(indicators)
+        
+        # Determine risk level from analysis or indicators
+        risk_level = extract_risk_level(analysis, indicators)
+        
+        print(f"✅ Macro Agent: Async analysis complete - Risk level: {risk_level}")
+        
+        return {
+            "macro_summary": analysis,
+            "macro_indicators": indicators,
+            "macro_risk_level": risk_level,
+        }
+        
+    except Exception as e:
+        print(f"❌ Macro Agent ERROR: {str(e)}")
+        # Return default values on error
+        return {
+            "macro_summary": "Macroeconomic data unavailable",
+            "macro_indicators": {},
+            "macro_risk_level": "medium",
+        }
 

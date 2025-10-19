@@ -1,4 +1,5 @@
 """Technical analysis agent for evaluating price patterns and indicators."""
+import aiohttp
 from typing import Dict
 from app.agents.state import AgentState
 from app.services.stock_data import stock_data_service
@@ -185,4 +186,103 @@ def _volume_interpretation(current: int, avg: int) -> str:
         return f"Low ({ratio:.1f}x average) - weak conviction"
     else:
         return "Normal"
+
+
+def _bollinger_position(price: float, upper: float, lower: float) -> str:
+    """Interpret price position within Bollinger Bands."""
+    if price > upper:
+        return "Above upper band - overbought"
+    elif price < lower:
+        return "Below lower band - oversold"
+    elif price > (upper + lower) / 2:
+        return "Above middle - bullish"
+    else:
+        return "Below middle - bearish"
+
+
+async def technical_agent_async(state: AgentState) -> Dict:
+    """
+    Pure async technical analysis agent that evaluates technical indicators and generates signals.
+    Uses async HTTP calls and async LLM calls for optimal performance.
+    """
+    symbol = state["symbol"]
+    
+    try:
+        print(f"📈 Technical Agent: Starting async analysis for {symbol}")
+        
+        # Get stock data with indicators using async
+        print(f"📊 Technical Agent: Fetching stock data with async calls...")
+        async with aiohttp.ClientSession() as session:
+            df, indicators = await stock_data_service.get_stock_data_async(symbol, session)
+            chart_data = stock_data_service.get_chart_data(df)
+            print(f"✓ Technical Agent: Calculated {len(indicators)} technical indicators")
+        
+        # Generate technical signals
+        print(f"🔍 Technical Agent: Generating technical signals...")
+        signals = generate_technical_signals(indicators)
+        print(f"✓ Technical Agent: Generated signals - Overall: {signals.get('overall', 'N/A')}")
+        
+        # Use async LLM to interpret technical setup
+        print(f"🤖 Technical Agent: Calling async LLM for technical interpretation...")
+        llm = get_llm_service()
+    except Exception as e:
+        print(f"❌ Technical Agent ERROR: Failed during setup - {str(e)}")
+        raise
+    
+    technical_context = f"""
+Stock: {symbol}
+Current Price: ${indicators['price']:.2f}
+
+Trend Indicators:
+- SMA(20): ${indicators['sma_20']:.2f} - Price is {_position_relative(indicators['price'], indicators['sma_20'])}
+- SMA(50): ${indicators['sma_50']:.2f} - Price is {_position_relative(indicators['price'], indicators['sma_50'])}
+- SMA(200): ${indicators['sma_200']:.2f} - Price is {_position_relative(indicators['price'], indicators['sma_200'])}
+
+Momentum Indicators:
+- RSI(14): {indicators['rsi']:.1f} - {_rsi_interpretation(indicators['rsi'])}
+- MACD: {indicators['macd']:.2f}
+- MACD Signal: {indicators['macd_signal']:.2f}
+- MACD Histogram: {indicators['macd_histogram']:.2f} - {_macd_interpretation(indicators['macd_histogram'])}
+
+Volatility:
+- Bollinger Upper: ${indicators['bb_upper']:.2f}
+- Bollinger Lower: ${indicators['bb_lower']:.2f}
+- Price position: {_bollinger_position(indicators['price'], indicators['bb_upper'], indicators['bb_lower'])}
+
+Volume:
+- Current: {indicators['volume']:,}
+- Average: {indicators['volume_avg']:,}
+- {_volume_interpretation(indicators['volume'], indicators['volume_avg'])}
+
+Technical Signals:
+- Overall: {signals.get('overall', 'N/A')}
+- Trend: {signals.get('trend', 'N/A')}
+- Momentum: {signals.get('momentum', 'N/A')}
+- Volume: {signals.get('volume', 'N/A')}
+"""
+
+    system_prompt = """You are a technical analysis expert. Analyze the technical indicators and provide:
+
+1. **Overall Technical Assessment**: Bullish, Bearish, or Neutral
+2. **Key Support/Resistance Levels**: Based on moving averages and Bollinger Bands
+3. **Entry/Exit Signals**: When to buy/sell based on current setup
+4. **Risk Management**: Stop-loss and take-profit levels
+5. **Time Horizon**: Short-term, medium-term, or long-term outlook
+
+Focus on actionable insights for trading decisions."""
+
+    try:
+        analysis = await llm.ainvoke(system_prompt, technical_context)
+        print(f"✓ Technical Agent: Async LLM analysis completed")
+    except Exception as e:
+        print(f"❌ Technical Agent ERROR: Async LLM call failed - {str(e)}")
+        raise
+
+    print(f"✅ Technical Agent: Async analysis complete for {symbol}")
+    
+    return {
+        "technical_signals": signals,
+        "chart_data": chart_data,
+        "technical_indicators": indicators,
+    }
 

@@ -180,13 +180,21 @@ export default function App() {
     }
   };
 
-  // Calculate which agent is currently processing based on the actual execution order
-  const agentOrder = ["research", "technical", "sentiment", "macro", "decision"];
-  const currentAgentIndex = agentOrder.findIndex(agentId => agentStatuses[agentId] === "processing");
-  const agents = getAgentsList(currentAgentIndex);
+  // Calculate current stage and progress for parallel execution
+  const parallelAgents = ["research", "technical", "sentiment", "macro"];
+  const completedParallel = parallelAgents.filter(id => agentStatuses[id] === "completed").length;
+  const allParallelComplete = completedParallel === 4;
+
+  const currentStage: "parallel" | "decision" | "idle" = 
+    isAnalyzing && !allParallelComplete ? "parallel" :
+    isAnalyzing && allParallelComplete ? "decision" : 
+    "idle";
+
+  const agents = getAgentsList(currentStage, completedParallel, agentStatuses);
   console.log("🔄 Agents list updated:", agents.map(a => `${a.id}:${a.status}`).join(", "));
   console.log("🔄 Current agentStatuses object:", agentStatuses);
-  console.log("🔄 Current agent index:", currentAgentIndex);
+  console.log("🔄 Current stage:", currentStage, "Completed parallel:", completedParallel);
+  console.log("🔄 Decision agent status:", agentStatuses.decision || "not set");
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50 to-blue-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900">
