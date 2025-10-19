@@ -86,7 +86,7 @@ export function StockChart({ stockName, data, indicators, currentPrice }: StockC
                 dot={false}
                 name="Price"
               />
-              {data[0]?.sma20 && (
+              {data[0]?.sma20 !== undefined && (
                 <Line
                   type="monotone"
                   dataKey="sma20"
@@ -97,7 +97,7 @@ export function StockChart({ stockName, data, indicators, currentPrice }: StockC
                   name="SMA 20"
                 />
               )}
-              {data[0]?.sma50 && (
+              {data[0]?.sma50 !== undefined && (
                 <Line
                   type="monotone"
                   dataKey="sma50"
@@ -108,7 +108,7 @@ export function StockChart({ stockName, data, indicators, currentPrice }: StockC
                   name="SMA 50"
                 />
               )}
-              {data[0]?.ema12 && (
+              {data[0]?.ema12 !== undefined && (
                 <Line
                   type="monotone"
                   dataKey="ema12"
@@ -119,7 +119,7 @@ export function StockChart({ stockName, data, indicators, currentPrice }: StockC
                   name="EMA 12"
                 />
               )}
-              {data[0]?.sma200 && (
+              {data[0]?.sma200 !== undefined && (
                 <Line
                   type="monotone"
                   dataKey="sma200"
@@ -130,7 +130,7 @@ export function StockChart({ stockName, data, indicators, currentPrice }: StockC
                   name="SMA 200"
                 />
               )}
-              {data[0]?.ema26 && (
+              {data[0]?.ema26 !== undefined && (
                 <Line
                   type="monotone"
                   dataKey="ema26"

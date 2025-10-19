@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     proxy_integration_source: str = "stock-researcher-app"
     
     # LLM Configuration
-    default_llm_provider: str = "ollama-mixtral"  # "openai", "gemini", "claude", "proxy-openai", "proxy-gemini", "proxy-claude", "ollama-llama3.1", "ollama-llama3.2", "ollama-deepseek-r1", "ollama-qwen2.5", "ollama-mixtral", "ollama-codellama"
+    default_llm_provider: str = "ollama-llama3.1"  # "openai", "gemini", "claude", "proxy-openai", "proxy-gemini", "proxy-claude", "ollama-llama3.1", "ollama-llama3.2", "ollama-deepseek-r1", "ollama-qwen2.5", "ollama-mixtral", "ollama-codellama"
     
     # Ollama Configuration (for local open-source models)
     ollama_base_url: str = "http://localhost:11434"
