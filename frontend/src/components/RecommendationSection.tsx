@@ -135,13 +135,18 @@ export function RecommendationSection({ analysisResult, investmentStyle }: Recom
           {/* AI Recommendation */}
           <Card className="border-2 border-blue-200 dark:border-blue-800 shadow-xl">
             <CardHeader className="bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-800 border-b border-blue-100 dark:border-gray-700">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 bg-blue-500 rounded-xl">
-                  <Brain className="w-6 h-6 text-white" />
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-blue-500 rounded-xl">
+                    <Brain className="w-6 h-6 text-white" />
+                  </div>
+                  <CardTitle className="text-blue-900 dark:text-blue-300">
+                    AI Recommendation
+                  </CardTitle>
                 </div>
-                <CardTitle className="text-blue-900 dark:text-blue-300">
-                  AI Recommendation
-                </CardTitle>
+                <Badge className={`${aiDetails.bgColor} text-white px-3 py-1 text-sm font-semibold`}>
+                  {aiDetails.text}
+                </Badge>
               </div>
               <p className="text-gray-600 dark:text-gray-400 text-sm">
                 Balanced analysis across all factors
@@ -278,13 +283,18 @@ export function RecommendationSection({ analysisResult, investmentStyle }: Recom
           {/* User Strategy Recommendation */}
           <Card className="border-2 border-purple-200 dark:border-purple-800 shadow-xl">
             <CardHeader className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-gray-800 dark:to-gray-800 border-b border-purple-100 dark:border-gray-700">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 bg-purple-500 rounded-xl">
-                  <Target className="w-6 h-6 text-white" />
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-purple-500 rounded-xl">
+                    <Target className="w-6 h-6 text-white" />
+                  </div>
+                  <CardTitle className="text-purple-900 dark:text-purple-300">
+                    {investmentStyle.charAt(0).toUpperCase() + investmentStyle.slice(1)} Strategy
+                  </CardTitle>
                 </div>
-                <CardTitle className="text-purple-900 dark:text-purple-300">
-                  {investmentStyle.charAt(0).toUpperCase() + investmentStyle.slice(1)} Strategy
-                </CardTitle>
+                <Badge className={`${userDetails.bgColor} text-white px-3 py-1 text-sm font-semibold`}>
+                  {userDetails.text}
+                </Badge>
               </div>
               <p className="text-gray-600 dark:text-gray-400 text-sm">
                 Tailored to your investment style

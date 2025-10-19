@@ -2,6 +2,8 @@
 import yfinance as yf
 import pandas as pd
 import pandas_ta as ta
+import aiohttp
+import asyncio
 from typing import Dict, Tuple, Optional
 from datetime import datetime, timedelta
 
@@ -166,6 +168,25 @@ class StockDataService:
             'debt_ratio': info.get('debtToEquity', 0),
             'description': info.get('longBusinessSummary', ''),
         }
+    
+    async def get_company_info_async(self, symbol: str, session: aiohttp.ClientSession) -> Dict:
+        """
+        Async version of get_company_info using aiohttp.
+        Maintains the same return format as the sync version.
+        """
+        # For now, we'll use the sync version in a thread to maintain compatibility
+        # In a full async implementation, you'd replace yfinance calls with direct API calls
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, self.get_company_info, symbol)
+    
+    async def get_stock_data_async(self, symbol: str, session: aiohttp.ClientSession, period: str = "90d") -> Tuple[pd.DataFrame, Dict]:
+        """
+        Async version of get_stock_data using aiohttp.
+        Maintains the same return format as the sync version.
+        """
+        # For now, we'll use the sync version in a thread to maintain compatibility
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, self.get_stock_data, symbol, period)
 
 
 # Global instance

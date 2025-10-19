@@ -12,9 +12,10 @@ from app.models import (
     MacroIndicators, Recommendation, AgentUpdate
 )
 from app.agents.graph import analysis_workflow
-from app.agents.research_agent import research_agent
-from app.agents.technical_agent import technical_agent
-from app.agents.sentiment_agent import sentiment_agent
+from app.agents.research_agent import research_agent, research_agent_async
+from app.agents.technical_agent import technical_agent, technical_agent_async
+from app.agents.sentiment_agent import sentiment_agent, sentiment_agent_async
+from app.agents.macro_agent import macro_agent, macro_agent_async
 from app.agents.decision_agent import decision_agent
 from app.agents.state import AgentState
 from app.services.stock_data import stock_data_service
@@ -164,165 +165,120 @@ async def analyze_stream(websocket: WebSocket, symbol: str, style: str = "balanc
 
         # Run workflow with real-time progress updates
         try:
-            # Send initial status for research agent
-            try:
-                await websocket.send_json({
-                    "agent": "research",
-                    "status": "in_progress",
-                    "message": "Analyzing company fundamentals...",
-                })
-                await asyncio.sleep(0.1)  # Small delay to ensure message is sent
-            except Exception as e:
-                print(f"❌ WebSocket ERROR: Failed to send research start - {str(e)}")
-                return
+            print(f"🔄 Starting parallel workflow execution for {symbol}")
 
-            # Run each agent individually to get real-time updates
-            print(f"🔄 Starting workflow execution for {symbol}")
+            # Send initial "in_progress" for all parallel agents
+            parallel_agents = ["research", "technical", "sentiment", "macro"]
+            for agent_name in parallel_agents:
+                try:
+                    await websocket.send_json({
+                        "agent": agent_name,
+                        "status": "in_progress",
+                        "message": f"Starting {agent_name} analysis...",
+                    })
+                except Exception as e:
+                    print(f"❌ WebSocket ERROR: Failed to send {agent_name} start - {str(e)}")
+                    return
 
-            # Execute research agent first
-            try:
-                print(f"📊 Executing research agent...")
-                research_result = research_agent(state)
-                state.update(research_result)
-                print(f"✅ Research agent completed for {symbol}")
-            except Exception as e:
-                print(f"❌ Research Agent ERROR: {str(e)}")
-                await websocket.send_json({
-                    "agent": "research",
-                    "status": "failed",
-                    "message": f"Research failed: {str(e)}",
-                })
-                raise
+            # Execute 4 agents in parallel using asyncio.gather
+            print(f"🚀 Executing parallel agents: {', '.join(parallel_agents)}")
+            results = await asyncio.gather(
+                research_agent_async(state),
+                technical_agent_async(state),
+                sentiment_agent_async(state),
+                macro_agent_async(state),
+                return_exceptions=True  # Continue if one fails
+            )
 
-            # Send research completion
-            try:
-                await websocket.send_json({
-                    "agent": "research",
-                    "status": "completed",
-                    "message": "Research complete",
-                })
-                await asyncio.sleep(0.1)  # Small delay to ensure message is sent
-            except Exception as e:
-                print(f"❌ WebSocket ERROR: Failed to send research completion - {str(e)}")
-                return
-
-            # Send technical agent start
-            try:
-                await websocket.send_json({
-                    "agent": "technical",
-                    "status": "in_progress",
-                    "message": "Analyzing price patterns...",
-                })
-                await asyncio.sleep(0.1)  # Small delay to ensure message is sent
-            except Exception as e:
-                print(f"❌ WebSocket ERROR: Failed to send technical start - {str(e)}")
-                return
-
-            # Execute technical agent
-            try:
-                print(f"📈 Executing technical agent...")
-                technical_result = technical_agent(state)
-                state.update(technical_result)
-                print(f"✅ Technical agent completed for {symbol}")
-            except Exception as e:
-                print(f"❌ Technical Agent ERROR: {str(e)}")
-                await websocket.send_json({
-                    "agent": "technical",
-                    "status": "failed",
-                    "message": f"Technical analysis failed: {str(e)}",
-                })
-                raise
-
-            # Send technical completion
-            try:
-                await websocket.send_json({
-                    "agent": "technical",
-                    "status": "completed",
-                    "message": "Technical analysis complete",
-                })
-                await asyncio.sleep(0.1)  # Small delay to ensure message is sent
-            except Exception as e:
-                print(f"❌ WebSocket ERROR: Failed to send technical completion - {str(e)}")
-                return
-
-            # Send sentiment agent start
-            try:
-                await websocket.send_json({
-                    "agent": "sentiment",
-                    "status": "in_progress",
-                    "message": "Analyzing news sentiment...",
-                })
-                await asyncio.sleep(0.1)  # Small delay to ensure message is sent
-            except Exception as e:
-                print(f"❌ WebSocket ERROR: Failed to send sentiment start - {str(e)}")
-                return
-
-            # Execute sentiment agent
-            try:
-                print(f"📰 Executing sentiment agent...")
-                sentiment_result = sentiment_agent(state)
-                state.update(sentiment_result)
-                print(f"✅ Sentiment agent completed for {symbol}")
-            except Exception as e:
-                print(f"❌ Sentiment Agent ERROR: {str(e)}")
-                await websocket.send_json({
-                    "agent": "sentiment",
-                    "status": "failed",
-                    "message": f"Sentiment analysis failed: {str(e)}",
-                })
-                raise
-
-            # Send sentiment completion
-            try:
-                await websocket.send_json({
-                    "agent": "sentiment",
-                    "status": "completed",
-                    "message": "Sentiment analysis complete",
-                })
-                await asyncio.sleep(0.1)  # Small delay to ensure message is sent
-            except Exception as e:
-                print(f"❌ WebSocket ERROR: Failed to send sentiment completion - {str(e)}")
-                return
-
-            # Send macro agent start
-            try:
-                await websocket.send_json({
-                    "agent": "macro",
-                    "status": "in_progress",
-                    "message": "Analyzing market conditions...",
-                })
-                await asyncio.sleep(0.1)  # Small delay to ensure message is sent
-            except Exception as e:
-                print(f"❌ WebSocket ERROR: Failed to send macro start - {str(e)}")
-                return
-
-            # Execute macro agent
-            try:
-                print(f"🌐 Executing macro agent...")
-                from app.agents.macro_agent import macro_agent
-                macro_result = macro_agent(state)
-                state.update(macro_result)
-                print(f"✅ Macro agent completed for {symbol}")
-            except Exception as e:
-                print(f"❌ Macro Agent ERROR: {str(e)}")
-                await websocket.send_json({
-                    "agent": "macro",
-                    "status": "failed",
-                    "message": f"Macro analysis failed: {str(e)}",
-                })
-                raise
-
-            # Send macro completion
-            try:
-                await websocket.send_json({
-                    "agent": "macro",
-                    "status": "completed",
-                    "message": "Macro analysis complete",
-                })
-                await asyncio.sleep(0.1)  # Small delay to ensure message is sent
-            except Exception as e:
-                print(f"❌ WebSocket ERROR: Failed to send macro completion - {str(e)}")
-                return
+            # Process results and send completion messages
+            failed_agents = []
+            for i, (agent_name, result) in enumerate(zip(parallel_agents, results)):
+                if isinstance(result, Exception):
+                    print(f"❌ {agent_name.title()} Agent ERROR: {str(result)}")
+                    failed_agents.append(agent_name)
+                    try:
+                        await websocket.send_json({
+                            "agent": agent_name,
+                            "status": "failed",
+                            "message": f"{agent_name} failed: {str(result)}",
+                        })
+                    except Exception as e:
+                        print(f"❌ WebSocket ERROR: Failed to send {agent_name} failure - {str(e)}")
+                else:
+                    state.update(result)
+                    print(f"✅ {agent_name.title()} agent completed for {symbol}")
+                    try:
+                        await websocket.send_json({
+                            "agent": agent_name,
+                            "status": "completed",
+                            "message": f"{agent_name.title()} analysis complete",
+                        })
+                    except Exception as e:
+                        print(f"❌ WebSocket ERROR: Failed to send {agent_name} completion - {str(e)}")
+            
+            # If critical agents failed, provide default values
+            if "technical" in failed_agents:
+                print(f"⚠️ Technical agent failed, providing default technical indicators")
+                
+                # Try to get current price even if technical analysis failed
+                current_price = 0.0
+                try:
+                    import yfinance as yf
+                    ticker = yf.Ticker(symbol)
+                    info = ticker.info
+                    current_price = info.get('currentPrice', info.get('regularMarketPrice', 0.0))
+                    if current_price == 0:
+                        current_price = info.get('previousClose', 0.0)
+                    print(f"✓ Retrieved current price: ${current_price:.2f}")
+                except Exception as e:
+                    print(f"⚠️ Could not retrieve current price: {str(e)}")
+                    # Try one more fallback - get from historical data
+                    try:
+                        hist = ticker.history(period="1d")
+                        if not hist.empty:
+                            current_price = float(hist['Close'].iloc[-1])
+                            print(f"✓ Retrieved current price from history: ${current_price:.2f}")
+                    except Exception as e2:
+                        print(f"⚠️ Could not retrieve current price from history: {str(e2)}")
+                
+                state["technical_indicators"] = {
+                    "price": current_price,
+                    "sma_20": 0.0,
+                    "sma_50": 0.0,
+                    "sma_200": 0.0,
+                    "ema_12": 0.0,
+                    "ema_26": 0.0,
+                    "rsi": 50.0,
+                    "macd": 0.0,
+                    "macd_signal": 0.0,
+                    "macd_histogram": 0.0,
+                    "bb_upper": 0.0,
+                    "bb_middle": 0.0,
+                    "bb_lower": 0.0,
+                    "volume": 0,
+                    "volume_avg": 0,
+                    "atr": 0.0,
+                }
+                state["technical_signals"] = {"overall": "N/A", "trend": "N/A", "momentum": "N/A", "volume": "N/A"}
+                state["chart_data"] = {}
+            
+            if "research" in failed_agents:
+                print(f"⚠️ Research agent failed, providing default research data")
+                state["company_info"] = "Research data unavailable"
+                state["financial_data"] = {}
+                state["research_sources"] = []
+            
+            if "sentiment" in failed_agents:
+                print(f"⚠️ Sentiment agent failed, providing default sentiment data")
+                state["news_summary"] = "Sentiment analysis unavailable"
+                state["sentiment_score"] = 0.0
+                state["news_sources"] = []
+            
+            if "macro" in failed_agents:
+                print(f"⚠️ Macro agent failed, providing default macro data")
+                state["macro_summary"] = "Macro analysis unavailable"
+                state["macro_indicators"] = {}
+                state["macro_risk_level"] = "medium"
 
             # Send decision agent start
             try:
@@ -349,7 +305,34 @@ async def analyze_stream(websocket: WebSocket, symbol: str, style: str = "balanc
                     "status": "failed",
                     "message": f"Decision analysis failed: {str(e)}",
                 })
-                raise
+                
+                # Provide fallback values for decision agent failure
+                print(f"⚠️ Decision agent failed, providing default recommendations")
+                state.update({
+                    "ai_recommendation": "HOLD",
+                    "ai_confidence": 0.5,
+                    "ai_horizon": "Medium-term",
+                    "ai_key_reasons": ["Analysis incomplete due to technical error"],
+                    "ai_reasoning": "Unable to generate recommendation due to system error",
+                    "ai_macro_impact": "",
+                    "ai_weights": {"fundamental": 0.25, "technical": 0.25, "sentiment": 0.25, "macro": 0.25},
+                    "ai_technical_signals": {},
+                    "ai_entry_price": None,
+                    "ai_targets": None,
+                    "ai_stop_loss": None,
+                    "user_recommendation": "HOLD",
+                    "user_confidence": 0.5,
+                    "user_horizon": "Medium-term",
+                    "user_key_reasons": ["Analysis incomplete due to technical error"],
+                    "user_reasoning": "Unable to generate recommendation due to system error",
+                    "user_macro_impact": "",
+                    "user_weights": {"fundamental": 0.25, "technical": 0.25, "sentiment": 0.25, "macro": 0.25},
+                    "user_technical_signals": {},
+                    "user_entry_price": None,
+                    "user_targets": None,
+                    "user_stop_loss": None,
+                    "comparison_insight": "Both AI and user recommendations are unavailable due to system error",
+                })
 
             # Send decision completion
             try:
