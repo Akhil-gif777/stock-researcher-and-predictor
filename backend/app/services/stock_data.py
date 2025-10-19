@@ -138,6 +138,8 @@ class StockDataService:
             'sma_20': df['SMA_20'].fillna(0).tolist(),
             'sma_50': df['SMA_50'].fillna(0).tolist(),
             'sma_200': df['SMA_200'].fillna(0).tolist(),
+            'ema_12': df['EMA_12'].fillna(0).tolist(),
+            'ema_26': df['EMA_26'].fillna(0).tolist(),
             'rsi': df['RSI'].fillna(50).tolist(),
             'macd': df['MACD'].fillna(0).tolist(),
             'macd_signal': df['MACD_signal'].fillna(0).tolist(),

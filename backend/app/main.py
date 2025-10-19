@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from typing import Dict
 import asyncio
 from datetime import datetime
+import pandas as pd
 
 from app.config import settings
 from app.models import (
@@ -367,15 +368,46 @@ async def analyze_stream(websocket: WebSocket, symbol: str, style: str = "balanc
             # Send final result
             try:
                 final_result = build_analysis_result(state)
+                
+                # Convert to dict and handle any serialization issues
+                result_dict = final_result.dict()
+                
+                # Clean chart_data to ensure JSON serialization
+                if 'chart_data' in result_dict and result_dict['chart_data']:
+                    chart_data = result_dict['chart_data']
+                    # Convert any NaN values to None for JSON serialization
+                    for key, value in chart_data.items():
+                        if isinstance(value, list):
+                            chart_data[key] = [None if pd.isna(v) else v for v in value]
+                
                 await websocket.send_json({
                     "agent": "system",
                     "status": "completed",
                     "message": "Analysis complete",
-                    "data": final_result.dict(),
+                    "data": result_dict,
                 })
                 print(f"📨 Final result sent for {symbol}")
             except Exception as e:
                 print(f"❌ WebSocket ERROR: Failed to send final result - {str(e)}")
+                import traceback
+                print(f"❌ WebSocket SERIALIZATION TRACEBACK: {traceback.format_exc()}")
+                
+                # Try to send a simplified result without chart_data
+                try:
+                    simplified_result = {
+                        "symbol": state.get("symbol", symbol),
+                        "current_price": state.get("technical_indicators", {}).get("price", 0),
+                        "error": "Chart data serialization failed, but analysis completed"
+                    }
+                    await websocket.send_json({
+                        "agent": "system",
+                        "status": "completed",
+                        "message": "Analysis complete (simplified result due to serialization issue)",
+                        "data": simplified_result,
+                    })
+                    print(f"📨 Simplified result sent for {symbol}")
+                except Exception as fallback_error:
+                    print(f"❌ WebSocket ERROR: Even simplified result failed - {str(fallback_error)}")
 
             # Keep connection open briefly to ensure frontend receives all messages
             await asyncio.sleep(0.5)
