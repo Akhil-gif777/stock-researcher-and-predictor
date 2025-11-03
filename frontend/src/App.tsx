@@ -41,24 +41,8 @@ export default function App() {
     }
     console.log("✅ Backend is healthy");
 
-    // Test chart data endpoint (but don't block analysis if it fails)
-    console.log("🔄 Testing chart data endpoint...");
-    try {
-      const isChartDataWorking = await stockAnalysisAPI.testChartDataEndpoint();
-      if (!isChartDataWorking) {
-        console.warn("⚠️ Chart data endpoint test failed, but continuing with analysis");
-        toast.warning("Chart data may not be available, but analysis will continue");
-      } else {
-        console.log("✅ Chart data endpoint is working");
-      }
-    } catch (testError) {
-      console.warn("⚠️ Chart data test failed with error:", testError);
-      if (testError instanceof Error && testError.message.includes("MACD")) {
-        toast.warning("Chart data is temporarily unavailable due to a backend calculation error");
-      } else {
-        toast.warning("Chart data endpoint test failed, but analysis will continue");
-      }
-    }
+    // Note: Removed testChartDataEndpoint() call to avoid fetching hardcoded AAPL data
+    // Chart data will be fetched with the actual user-provided symbol after analysis completes
 
     setIsAnalyzing(true);
     setShowResults(false);

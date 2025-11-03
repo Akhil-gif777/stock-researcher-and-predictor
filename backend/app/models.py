@@ -82,13 +82,24 @@ class StockAnalysisResult(BaseModel):
     research_summary: str
     technical_analysis: str
     sentiment_analysis: str
+    sentiment_aspects: Optional[Dict[str, float]] = None  # Aspect-based sentiment scores
+    sentiment_trend: Optional[str] = None  # "improving", "declining", "stable"
+    sentiment_confidence: Optional[float] = None  # Confidence in sentiment analysis (0.0-1.0)
+
+    # Finnhub pre-computed sentiment data
+    finnhub_sentiment_score: Optional[float] = None  # Finnhub company news score (0.0-1.0)
+    finnhub_bullish_percent: Optional[float] = None  # Percentage of bullish articles
+    finnhub_bearish_percent: Optional[float] = None  # Percentage of bearish articles
+    finnhub_buzz: Optional[float] = None  # Article volume buzz score
+    finnhub_articles_count: Optional[int] = None  # Number of articles in last week
+
     macro_summary: str
-    
+
     # Dual recommendations
     ai_recommendation: Recommendation  # AI's unbiased analysis
     user_recommendation: Recommendation  # Personalized to user style
     comparison_insight: str  # How they differ
-    
+
     sources: List[Source]
     technical_indicators: TechnicalIndicators
     macro_indicators: MacroIndicators

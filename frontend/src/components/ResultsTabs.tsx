@@ -368,7 +368,200 @@ export function ResultsTabs({ analysisResult }: ResultsTabsProps) {
                   </ReactMarkdown>
                 </div>
               </div>
-              
+
+              {/* Finnhub Pre-Computed Sentiment */}
+              {(analysisResult.finnhub_sentiment_score !== undefined && analysisResult.finnhub_sentiment_score !== null) && (
+                <Card className="border-2 border-blue-200 dark:border-blue-800 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-gray-800 dark:to-gray-800">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm font-semibold text-blue-900 dark:text-blue-300 flex items-center gap-2">
+                      <Globe className="w-4 h-4" />
+                      Finnhub News Sentiment (Pre-Computed)
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {/* Overall Sentiment Score */}
+                      <div className="p-4 bg-white dark:bg-gray-900/50 rounded-lg">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">News Score</p>
+                        <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                          {(analysisResult.finnhub_sentiment_score * 100).toFixed(0)}%
+                        </p>
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                          {analysisResult.finnhub_sentiment_score > 0.6 ? 'Positive' :
+                           analysisResult.finnhub_sentiment_score > 0.4 ? 'Neutral' : 'Negative'}
+                        </p>
+                      </div>
+
+                      {/* Bullish/Bearish Breakdown */}
+                      {(analysisResult.finnhub_bullish_percent !== undefined && analysisResult.finnhub_bearish_percent !== undefined) && (
+                        <div className="p-4 bg-white dark:bg-gray-900/50 rounded-lg">
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Sentiment Breakdown</p>
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-green-600 dark:text-green-400">Bullish</span>
+                              <span className="text-sm font-semibold text-green-600 dark:text-green-400">
+                                {(analysisResult.finnhub_bullish_percent * 100).toFixed(0)}%
+                              </span>
+                            </div>
+                            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                              <div
+                                className="bg-green-500 h-2 rounded-full"
+                                style={{ width: `${analysisResult.finnhub_bullish_percent * 100}%` }}
+                              />
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-red-600 dark:text-red-400">Bearish</span>
+                              <span className="text-sm font-semibold text-red-600 dark:text-red-400">
+                                {(analysisResult.finnhub_bearish_percent * 100).toFixed(0)}%
+                              </span>
+                            </div>
+                            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                              <div
+                                className="bg-red-500 h-2 rounded-full"
+                                style={{ width: `${analysisResult.finnhub_bearish_percent * 100}%` }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Buzz Indicator */}
+                      {analysisResult.finnhub_buzz !== undefined && (
+                        <div className="p-4 bg-white dark:bg-gray-900/50 rounded-lg">
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Article Buzz</p>
+                          <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                            {analysisResult.finnhub_buzz.toFixed(2)}x
+                          </p>
+                          <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                            vs Weekly Average
+                          </p>
+                          {analysisResult.finnhub_articles_count !== undefined && (
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                              {analysisResult.finnhub_articles_count} articles this week
+                            </p>
+                          )}
+                          {analysisResult.finnhub_buzz > 1.5 && (
+                            <Badge className="mt-2 !bg-orange-600 !text-white">
+                              High Activity
+                            </Badge>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Enhanced Sentiment Metrics */}
+              {analysisResult.sentiment_aspects && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Sentiment Trend & Confidence */}
+                  <Card className="border-2 border-pink-200 dark:border-pink-800">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                        Sentiment Trend & Confidence
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {/* Trend Indicator */}
+                      {analysisResult.sentiment_trend && (
+                        <div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">7-Day Trend</p>
+                          <div className="flex items-center gap-2">
+                            {analysisResult.sentiment_trend === "improving" && (
+                              <>
+                                <TrendingUp className="w-5 h-5 text-green-600" />
+                                <Badge className="!bg-green-600 !text-white">
+                                  Improving
+                                </Badge>
+                              </>
+                            )}
+                            {analysisResult.sentiment_trend === "declining" && (
+                              <>
+                                <TrendingUp className="w-5 h-5 text-red-600 transform rotate-180" />
+                                <Badge className="!bg-red-600 !text-white">
+                                  Declining
+                                </Badge>
+                              </>
+                            )}
+                            {analysisResult.sentiment_trend === "stable" && (
+                              <>
+                                <MessageSquare className="w-5 h-5 text-gray-600" />
+                                <Badge className="!bg-gray-600 !text-white">
+                                  Stable
+                                </Badge>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Confidence Score */}
+                      {analysisResult.sentiment_confidence !== undefined && (
+                        <div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Analysis Confidence</p>
+                          <div className="flex items-center gap-3">
+                            <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                              <div
+                                className="bg-gradient-to-r from-pink-500 to-purple-500 h-2 rounded-full transition-all"
+                                style={{ width: `${analysisResult.sentiment_confidence * 100}%` }}
+                              />
+                            </div>
+                            <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                              {(analysisResult.sentiment_confidence * 100).toFixed(0)}%
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Aspect-Based Sentiment Breakdown */}
+                  <Card className="border-2 border-purple-200 dark:border-purple-800">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                        Sentiment by Aspect
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {Object.entries(analysisResult.sentiment_aspects).map(([aspect, score]) => {
+                        const percentage = ((score + 1) / 2) * 100; // Convert -1 to 1 scale to 0-100%
+                        const isPositive = score > 0.2;
+                        const isNegative = score < -0.2;
+                        const color = isPositive ? 'bg-green-500' : isNegative ? 'bg-red-500' : 'bg-gray-500';
+
+                        return (
+                          <div key={aspect}>
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-xs font-medium text-gray-600 dark:text-gray-400 capitalize">
+                                {aspect === 'market' ? 'Market & Competition' : aspect}
+                              </span>
+                              <span className={`text-xs font-bold ${isPositive ? 'text-green-600' : isNegative ? 'text-red-600' : 'text-gray-600'}`}>
+                                {score > 0 ? '+' : ''}{score.toFixed(2)}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 relative">
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                  <div className="w-0.5 h-full bg-gray-400" style={{ marginLeft: '50%' }} />
+                                </div>
+                                <div
+                                  className={`${color} h-1.5 rounded-full transition-all`}
+                                  style={{
+                                    width: `${Math.abs(percentage - 50)}%`,
+                                    marginLeft: score < 0 ? `${percentage}%` : '50%'
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
               {sources.filter(s => s.type === "news").length > 0 && (
                 <div className="space-y-3">
                   <h4 className="text-gray-900 dark:text-gray-100 font-semibold">Recent News</h4>

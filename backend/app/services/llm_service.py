@@ -31,7 +31,7 @@ class LLMService:
             return self._create_ollama_llm("llama3.2:latest")
         
         elif self.provider == "ollama-deepseek-r1":
-            return self._create_ollama_llm("deepseek-r1:latest")
+            return self._create_ollama_llm("deepseek-r1:8b")
         
         elif self.provider == "ollama-qwen2.5":
             return self._create_ollama_llm("qwen2.5:7b")
@@ -61,8 +61,8 @@ class LLMService:
             temperature=0.7,
             request_timeout=120,  # Longer timeout for local models
             # Additional parameters for better performance
-            num_ctx=4096,  # Context window size
-            num_predict=2048,  # Max tokens to generate
+            num_ctx=128000,  # Context window size
+            num_predict=64000,  # Max tokens to generate
             top_k=40,
             top_p=0.9,
             repeat_penalty=1.1,

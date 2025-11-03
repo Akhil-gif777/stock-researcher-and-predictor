@@ -22,7 +22,17 @@ class AgentState(TypedDict):
     # Sentiment Agent outputs
     news_summary: str
     sentiment_score: float
+    sentiment_aspects: Dict  # Aspect-based sentiment scores (earnings, guidance, products, management, market)
+    sentiment_trend: str  # Sentiment trend: "improving", "declining", "stable"
+    sentiment_confidence: float  # Confidence in sentiment analysis (0.0-1.0)
     news_sources: List[Dict]
+
+    # Finnhub sentiment data (pre-computed)
+    finnhub_sentiment_score: Optional[float]  # Finnhub company news score (0.0-1.0)
+    finnhub_bullish_percent: Optional[float]  # Percentage of bullish articles (0.0-1.0)
+    finnhub_bearish_percent: Optional[float]  # Percentage of bearish articles (0.0-1.0)
+    finnhub_buzz: Optional[float]  # Buzz score (article volume vs weekly average)
+    finnhub_articles_count: Optional[int]  # Number of articles in last week
     
     # Macro Agent outputs
     macro_summary: str

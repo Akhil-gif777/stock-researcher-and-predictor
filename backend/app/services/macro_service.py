@@ -57,13 +57,20 @@ class MacroService:
         return None
     
     def _get_fed_rate(self) -> Optional[float]:
-        """Get Federal Funds Rate from FRED API (free)."""
+        """
+        Get Federal Funds Rate from FRED API or Alpha Vantage fallback.
+
+        Note: FRED API 'demo' key is invalid (returns 400 error).
+        To fix: Get free FRED API key from https://fred.stlouisfed.org/docs/api/api_key.html
+        Currently relying on Alpha Vantage fallback.
+        """
         try:
-            # Using FRED API (Federal Reserve Economic Data) - free
+            # Using FRED API (Federal Reserve Economic Data)
+            # NOTE: 'demo' key doesn't work - will trigger fallback to Alpha Vantage
             url = "https://api.stlouisfed.org/fred/series/observations"
             params = {
                 'series_id': 'FEDFUNDS',
-                'api_key': 'demo',  # Free demo key
+                'api_key': 'demo',  # Invalid - triggers fallback
                 'file_type': 'json',
                 'limit': 1,
                 'sort_order': 'desc'
@@ -71,13 +78,13 @@ class MacroService:
             response = requests.get(url, params=params, timeout=10)
             response.raise_for_status()
             data = response.json()
-            
+
             if 'observations' in data and len(data['observations']) > 0:
                 value = float(data['observations'][0]['value'])
-                print(f"✓ Fed Rate: {value:.2f}%")
+                print(f"✓ Fed Rate (FRED): {value:.2f}%")
                 return value
         except Exception as e:
-            print(f"⚠️ Failed to fetch Fed rate from FRED: {str(e)}")
+            print(f"⚠️ FRED API unavailable (expected with 'demo' key): {str(e)[:100]}")
         
         # Fallback: Use Alpha Vantage if configured
         if settings.alpha_vantage_api_key:
@@ -104,13 +111,18 @@ class MacroService:
         return 5.25
     
     def _get_gdp(self) -> Optional[float]:
-        """Get GDP growth rate from FRED API (free)."""
+        """
+        Get GDP growth rate from FRED API or Alpha Vantage fallback.
+
+        Note: FRED API 'demo' key is invalid. Currently relying on Alpha Vantage.
+        """
         try:
             # Using FRED API for GDP data
+            # NOTE: 'demo' key doesn't work - will trigger fallback
             url = "https://api.stlouisfed.org/fred/series/observations"
             params = {
                 'series_id': 'GDPC1',  # Real GDP
-                'api_key': 'demo',
+                'api_key': 'demo',  # Invalid - triggers fallback
                 'file_type': 'json',
                 'limit': 2,
                 'sort_order': 'desc'
@@ -118,15 +130,15 @@ class MacroService:
             response = requests.get(url, params=params, timeout=10)
             response.raise_for_status()
             data = response.json()
-            
+
             if 'observations' in data and len(data['observations']) >= 2:
                 current = float(data['observations'][0]['value'])
                 previous = float(data['observations'][1]['value'])
                 growth = ((current - previous) / previous) * 100
-                print(f"✓ GDP Growth: {growth:.2f}%")
+                print(f"✓ GDP Growth (FRED): {growth:.2f}%")
                 return growth
         except Exception as e:
-            print(f"⚠️ Failed to fetch GDP from FRED: {str(e)}")
+            print(f"⚠️ FRED API unavailable (expected with 'demo' key): {str(e)[:100]}")
         
         # Fallback: Use Alpha Vantage if configured
         if settings.alpha_vantage_api_key:
@@ -156,13 +168,18 @@ class MacroService:
         return 2.5
     
     def _get_cpi(self) -> Optional[float]:
-        """Get CPI inflation from FRED API (free)."""
+        """
+        Get CPI inflation from FRED API or Alpha Vantage fallback.
+
+        Note: FRED API 'demo' key is invalid. Currently relying on Alpha Vantage.
+        """
         try:
             # Using FRED API for CPI data
+            # NOTE: 'demo' key doesn't work - will trigger fallback
             url = "https://api.stlouisfed.org/fred/series/observations"
             params = {
                 'series_id': 'CPIAUCSL',  # Consumer Price Index
-                'api_key': 'demo',
+                'api_key': 'demo',  # Invalid - triggers fallback
                 'file_type': 'json',
                 'limit': 13,
                 'sort_order': 'desc'
@@ -170,15 +187,15 @@ class MacroService:
             response = requests.get(url, params=params, timeout=10)
             response.raise_for_status()
             data = response.json()
-            
+
             if 'observations' in data and len(data['observations']) >= 13:
                 current = float(data['observations'][0]['value'])
                 year_ago = float(data['observations'][12]['value'])
                 inflation = ((current - year_ago) / year_ago) * 100
-                print(f"✓ CPI Inflation: {inflation:.2f}%")
+                print(f"✓ CPI Inflation (FRED): {inflation:.2f}%")
                 return inflation
         except Exception as e:
-            print(f"⚠️ Failed to fetch CPI from FRED: {str(e)}")
+            print(f"⚠️ FRED API unavailable (expected with 'demo' key): {str(e)[:100]}")
         
         # Fallback: Use Alpha Vantage if configured
         if settings.alpha_vantage_api_key:
@@ -208,13 +225,18 @@ class MacroService:
         return 3.2
     
     def _get_unemployment(self) -> Optional[float]:
-        """Get unemployment rate from FRED API (free)."""
+        """
+        Get unemployment rate from FRED API or Alpha Vantage fallback.
+
+        Note: FRED API 'demo' key is invalid. Currently relying on Alpha Vantage.
+        """
         try:
             # Using FRED API for unemployment data
+            # NOTE: 'demo' key doesn't work - will trigger fallback
             url = "https://api.stlouisfed.org/fred/series/observations"
             params = {
                 'series_id': 'UNRATE',  # Unemployment Rate
-                'api_key': 'demo',
+                'api_key': 'demo',  # Invalid - triggers fallback
                 'file_type': 'json',
                 'limit': 1,
                 'sort_order': 'desc'
@@ -222,13 +244,13 @@ class MacroService:
             response = requests.get(url, params=params, timeout=10)
             response.raise_for_status()
             data = response.json()
-            
+
             if 'observations' in data and len(data['observations']) > 0:
                 value = float(data['observations'][0]['value'])
-                print(f"✓ Unemployment: {value:.2f}%")
+                print(f"✓ Unemployment (FRED): {value:.2f}%")
                 return value
         except Exception as e:
-            print(f"⚠️ Failed to fetch unemployment from FRED: {str(e)}")
+            print(f"⚠️ FRED API unavailable (expected with 'demo' key): {str(e)[:100]}")
         
         # Fallback: Use Alpha Vantage if configured
         if settings.alpha_vantage_api_key:
