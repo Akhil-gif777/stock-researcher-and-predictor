@@ -1,61 +1,63 @@
 """News service for fetching recent stock-related news."""
 import yfinance as yf
-from typing import List, Dict
-from datetime import datetime
+from typing import List, Dict, Tuple
+from datetime import datetime, timedelta
 from app.config import settings
 
 
 class NewsService:
     """Service for fetching stock-related news."""
     
-    def get_recent_news(self, symbol: str, max_articles: int = 10) -> List[Dict]:
+    def get_recent_news(self, symbol: str, max_articles: int = 10, days_back: int = 7) -> List[Dict]:
         """
-        Fetch recent news articles for a stock symbol.
-        
+        Fetch recent news articles for a stock symbol (7-day lookback by default).
+
         Primary source: NewsAPI (full article descriptions)
         Fallback: yfinance (if NewsAPI unavailable or fails)
-        
+
         Args:
             symbol: Stock ticker symbol
             max_articles: Maximum number of articles to return
-            
+            days_back: Number of days to look back (default: 7 for trend analysis)
+
         Returns:
-            List of news articles with title, snippet, url, timestamp
+            List of news articles with title, snippet, url, timestamp, credibility tier
         """
         # Try NewsAPI first if key is configured
         if settings.news_api_key:
             try:
-                return self._get_newsapi_articles(symbol, max_articles)
+                return self._get_newsapi_articles(symbol, max_articles, days_back)
             except Exception as e:
                 print(f"⚠️ NewsAPI failed: {str(e)}, falling back to yfinance")
-        
+
         # Fallback to yfinance
         return self._get_yfinance_news(symbol, max_articles)
     
-    def get_market_news(self, max_articles: int = 5) -> List[Dict]:
+    def get_market_news(self, max_articles: int = 5, days_back: int = 7) -> List[Dict]:
         """
-        Fetch broader market news that could affect stock prices.
-        
+        Fetch broader market news that could affect stock prices (7-day lookback).
+
         Args:
             max_articles: Maximum number of articles to return
-            
+            days_back: Number of days to look back (default: 7)
+
         Returns:
-            List of market news articles
+            List of market news articles with credibility tier
         """
         if settings.news_api_key:
             try:
-                return self._get_market_newsapi_articles(max_articles)
+                return self._get_market_newsapi_articles(max_articles, days_back)
             except Exception as e:
                 print(f"⚠️ Market news NewsAPI failed: {str(e)}")
-        
+
         return []
     
-    def _get_newsapi_articles(self, symbol: str, max_articles: int) -> List[Dict]:
-        """Fetch news from NewsAPI with improved search and filtering."""
+    def _get_newsapi_articles(self, symbol: str, max_articles: int, days_back: int = 7) -> List[Dict]:
+        """Fetch news from NewsAPI with 7-day lookback, improved search and credibility weighting."""
         from newsapi import NewsApiClient
-        
+
         newsapi = NewsApiClient(api_key=settings.news_api_key)
-        
+
         # Get company name and industry for better search results
         try:
             ticker = yf.Ticker(symbol)
@@ -66,20 +68,20 @@ class NewsService:
             company_name = symbol
             industry = ''
             sector = ''
-        
+
         # Build comprehensive search queries - start broad, then narrow
         queries = [
             f'"{symbol}"',  # Just the symbol - broadest search
             f'"{company_name}"',  # Just the company name
         ]
-        
+
         # Add more specific queries if we have company info
         if company_name != symbol:
             queries.extend([
                 f'"{symbol}" AND (earnings OR financial OR revenue OR profit OR growth OR stock OR shares)',
                 f'"{company_name}" AND (earnings OR financial OR revenue OR profit OR growth OR stock OR shares)',
             ])
-        
+
         # Add industry/sector specific queries if available
         if industry:
             queries.append(f'"{symbol}" AND "{industry}"')
@@ -87,9 +89,13 @@ class NewsService:
         if sector:
             queries.append(f'"{symbol}" AND "{sector}"')
             queries.append(f'"{company_name}" AND "{sector}"')
-        
+
         all_articles = []
-        
+
+        # Calculate date range (7 days back by default for trend analysis)
+        from_date = (datetime.now() - timedelta(days=days_back)).replace(hour=0, minute=0, second=0, microsecond=0)
+        print(f"📅 NewsAPI: Fetching articles from past {days_back} days (since {from_date.strftime('%Y-%m-%d')})")
+
         # Try multiple queries to get diverse, relevant articles
         for i, query in enumerate(queries):
             try:
@@ -99,7 +105,7 @@ class NewsService:
                     language='en',
                     sort_by='publishedAt',
                     page_size=min(max_articles, 20),  # Get more to filter
-                    from_param=(datetime.now().replace(hour=0, minute=0, second=0, microsecond=0).isoformat()),
+                    from_param=from_date.isoformat(),
                 )
                 
                 raw_articles = response.get('articles', [])
@@ -121,16 +127,21 @@ class NewsService:
         unique_articles = self._deduplicate_articles(all_articles)
         filtered_articles = self._filter_and_rank_articles(unique_articles, symbol, company_name)
         
-        # Format articles
+        # Format articles with credibility tier
         articles = []
         for article in filtered_articles[:max_articles]:
+            publisher = article.get('source', {}).get('name', 'Unknown')
+            credibility_tier, credibility_weight = self._get_publisher_credibility(publisher)
+
             articles.append({
                 'type': 'news',
                 'title': article.get('title', ''),
                 'url': article.get('url', ''),
                 'snippet': article.get('description', '') or article.get('title', ''),
-                'publisher': article.get('source', {}).get('name', 'Unknown'),
+                'publisher': publisher,
                 'timestamp': article.get('publishedAt', datetime.now().isoformat()),
+                'credibility_tier': credibility_tier,
+                'credibility_weight': credibility_weight,
             })
         
         # If we don't have enough articles, try a more permissive approach
@@ -143,7 +154,7 @@ class NewsService:
                     language='en',
                     sort_by='publishedAt',
                     page_size=max_articles * 2,
-                    from_param=(datetime.now().replace(hour=0, minute=0, second=0, microsecond=0).isoformat()),
+                    from_param=from_date.isoformat(),
                 )
                 
                 broad_articles = []
@@ -155,17 +166,22 @@ class NewsService:
                     broad_unique = self._deduplicate_articles(broad_articles)
                     broad_filtered = self._filter_and_rank_articles(broad_unique, symbol, company_name)
                     
-                    # Add to existing articles
+                    # Add to existing articles with credibility
                     for article in broad_filtered:
                         if len(articles) >= max_articles:
                             break
+                        publisher = article.get('source', {}).get('name', 'Unknown')
+                        credibility_tier, credibility_weight = self._get_publisher_credibility(publisher)
+
                         articles.append({
                             'type': 'news',
                             'title': article.get('title', ''),
                             'url': article.get('url', ''),
                             'snippet': article.get('description', '') or article.get('title', ''),
-                            'publisher': article.get('source', {}).get('name', 'Unknown'),
+                            'publisher': publisher,
                             'timestamp': article.get('publishedAt', datetime.now().isoformat()),
+                            'credibility_tier': credibility_tier,
+                            'credibility_weight': credibility_weight,
                         })
                     
                     print(f"✓ NewsAPI: Broad search added {len(articles)} total articles for {symbol}")
@@ -197,12 +213,12 @@ class NewsService:
         print(f"✓ yfinance: Fetched {len(articles)} articles for {symbol}")
         return articles
     
-    def _get_market_newsapi_articles(self, max_articles: int) -> List[Dict]:
-        """Fetch broader market news that could affect stock prices."""
+    def _get_market_newsapi_articles(self, max_articles: int, days_back: int = 7) -> List[Dict]:
+        """Fetch broader market news that could affect stock prices (7-day lookback)."""
         from newsapi import NewsApiClient
-        
+
         newsapi = NewsApiClient(api_key=settings.news_api_key)
-        
+
         # Market-wide news queries
         market_queries = [
             'Federal Reserve OR Fed OR interest rates OR monetary policy',
@@ -211,9 +227,13 @@ class NewsService:
             'earnings season OR quarterly results OR corporate earnings',
             'market volatility OR VIX OR market sentiment',
         ]
-        
+
         all_articles = []
-        
+
+        # Calculate date range
+        from_date = (datetime.now() - timedelta(days=days_back)).replace(hour=0, minute=0, second=0, microsecond=0)
+        print(f"📅 NewsAPI Market: Fetching market articles from past {days_back} days")
+
         for query in market_queries:
             try:
                 response = newsapi.get_everything(
@@ -221,7 +241,7 @@ class NewsService:
                     language='en',
                     sort_by='publishedAt',
                     page_size=5,  # Fewer per query
-                    from_param=(datetime.now().replace(hour=0, minute=0, second=0, microsecond=0).isoformat()),
+                    from_param=from_date.isoformat(),
                 )
                 
                 for article in response.get('articles', []):
@@ -232,18 +252,23 @@ class NewsService:
                 print(f"⚠️ Market query failed: {query} - {str(e)}")
                 continue
         
-        # Remove duplicates and format
+        # Remove duplicates and format with credibility
         unique_articles = self._deduplicate_articles(all_articles)
-        
+
         articles = []
         for article in unique_articles[:max_articles]:
+            publisher = article.get('source', {}).get('name', 'Unknown')
+            credibility_tier, credibility_weight = self._get_publisher_credibility(publisher)
+
             articles.append({
                 'type': 'market_news',
                 'title': article.get('title', ''),
                 'url': article.get('url', ''),
                 'snippet': article.get('description', '') or article.get('title', ''),
-                'publisher': article.get('source', {}).get('name', 'Unknown'),
+                'publisher': publisher,
                 'timestamp': article.get('publishedAt', datetime.now().isoformat()),
+                'credibility_tier': credibility_tier,
+                'credibility_weight': credibility_weight,
             })
         
         print(f"✓ NewsAPI: Fetched {len(articles)} market news articles")
@@ -385,6 +410,39 @@ class NewsService:
         
         # Sort by relevance score
         return sorted(articles, key=relevance_score, reverse=True)
+
+    def _get_publisher_credibility(self, publisher: str) -> Tuple[int, float]:
+        """
+        Get credibility tier and weight for a news publisher.
+
+        Returns:
+            Tuple of (tier, weight):
+            - Tier 1 (Premium): Weight 1.0 - Bloomberg, Reuters, WSJ, FT
+            - Tier 2 (Quality): Weight 0.75 - CNBC, MarketWatch, Barron's
+            - Tier 3 (Standard): Weight 0.5 - Other sources
+        """
+        publisher_lower = publisher.lower()
+
+        # Tier 1: Premium financial news sources
+        tier1_publishers = [
+            'bloomberg', 'reuters', 'wall street journal', 'wsj',
+            'financial times', 'ft.com'
+        ]
+        for pub in tier1_publishers:
+            if pub in publisher_lower:
+                return (1, 1.0)
+
+        # Tier 2: Quality business/financial sources
+        tier2_publishers = [
+            'cnbc', 'marketwatch', 'barrons', "barron's",
+            'seeking alpha', 'investor', 'forbes', 'fortune'
+        ]
+        for pub in tier2_publishers:
+            if pub in publisher_lower:
+                return (2, 0.75)
+
+        # Tier 3: All other sources
+        return (3, 0.5)
 
 
 # Global instance

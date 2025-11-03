@@ -60,12 +60,31 @@ export interface Recommendation {
   target_strategy?: string;
 }
 
+export interface SentimentAspects {
+  earnings: number;
+  guidance: number;
+  products: number;
+  management: number;
+  market: number;
+}
+
 export interface StockAnalysisResult {
   symbol: string;
   current_price: number;
   research_summary: string;
   technical_analysis: string;
   sentiment_analysis: string;
+  sentiment_aspects?: SentimentAspects;
+  sentiment_trend?: "improving" | "declining" | "stable";
+  sentiment_confidence?: number;
+
+  // Finnhub pre-computed sentiment data
+  finnhub_sentiment_score?: number; // 0.0-1.0
+  finnhub_bullish_percent?: number; // 0.0-1.0
+  finnhub_bearish_percent?: number; // 0.0-1.0
+  finnhub_buzz?: number; // Buzz score
+  finnhub_articles_count?: number; // Article count
+
   macro_summary: string;
   ai_recommendation: Recommendation;
   user_recommendation: Recommendation;
