@@ -18,6 +18,15 @@ class AgentState(TypedDict):
     technical_signals: Dict
     chart_data: Dict
     technical_indicators: Dict
+
+    # Enhanced Technical Agent outputs (optional - for enhanced version)
+    technical_config: Optional[Dict]  # User configuration for technical analysis
+    technical_analyses: Optional[Dict]  # Multi-timeframe analyses
+    timeframe_alignment: Optional[Dict]  # Alignment score and interpretation
+    all_patterns: Optional[Dict]  # Detected patterns across timeframes
+    all_signals: Optional[Dict]  # Weighted signals across timeframes
+    technical_analysis: Optional[str]  # LLM's comprehensive technical analysis
+    recommended_timeframe: Optional[str]  # Best timeframe for the user's style
     
     # Sentiment Agent outputs
     news_summary: str

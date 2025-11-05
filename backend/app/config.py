@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     gemini_api_key: Optional[str] = None
     news_api_key: Optional[str] = None
     alpha_vantage_api_key: Optional[str] = None
-    finnhub_api_key: Optional[str] = None
+    finnhub_api_key: Optional[str] = None  # Finnhub API for market data and sentiment
     
     # AWS-style credentials (if needed)
     aws_access_key_id: Optional[str] = None
@@ -28,9 +28,8 @@ class Settings(BaseSettings):
     proxy_spoke_version: str = "v1.0"
     proxy_integration_source: str = "stock-researcher-app"
     
-    # LLM provider settings
-    # Controls which LLM is used for analysis (e.g., OpenAI, Gemini, Claude, local Ollama)
-    default_llm_provider: str = "ollama-deepseek-r1"  # "openai", "gemini", "claude", "proxy-openai", "proxy-gemini", "proxy-claude", "ollama-llama3.1", "ollama-llama3.2", "ollama-deepseek-r1", "ollama-qwen2.5", "ollama-mixtral", "ollama-codellama"
+    # LLM Configuration
+    default_llm_provider: str = "ollama-gpt-oss-20b"  # "openai", "gemini", "claude", "proxy-openai", "proxy-gemini", "proxy-claude", "ollama-llama3.1", "ollama-llama3.2", "ollama-deepseek-r1", "ollama-qwen2.5", "ollama-mixtral", "ollama-codellama"
     
     # Ollama Configuration (for local open-source models)
     ollama_base_url: str = "http://localhost:11434"

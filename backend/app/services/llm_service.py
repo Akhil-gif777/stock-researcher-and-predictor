@@ -47,7 +47,8 @@ class LLMService:
         
         elif self.provider == "ollama-qwen2.5-72b":
             return self._create_ollama_llm("qwen2.5:72b")
-        
+        elif self.provider == "ollama-gpt-oss-20b":
+            return self._create_ollama_llm("gpt-oss:20b")
         else:
             raise ValueError(f"Unknown LLM provider: {self.provider}")
     

@@ -28,6 +28,100 @@ export interface TechnicalIndicators {
   atr: number;
   support?: number;
   resistance?: number;
+  // Advanced indicators
+  adx?: number;
+  di_plus?: number;
+  di_minus?: number;
+  stoch_k?: number;
+  stoch_d?: number;
+  obv?: number;
+  pivot?: number;
+  resistance1?: number;
+  support1?: number;
+  resistance2?: number;
+  support2?: number;
+  vwap?: number;
+  ichimoku_spana?: number;
+  ichimoku_spanb?: number;
+  ichimoku_base?: number;
+  ichimoku_conversion?: number;
+  fib_236?: number;
+  fib_382?: number;
+  fib_500?: number;
+  fib_618?: number;
+  fib_786?: number;
+}
+
+// Enhanced Technical Analysis Types
+export interface TechnicalConfig {
+  timeframes: string[];
+  selected_indicators?: string[];
+  custom_weights?: Record<string, number>;
+}
+
+export interface SignalAnalysis {
+  signal_type: string;
+  confidence: number;
+  weighted_score: number;
+  confluence_bonus: number;
+  signal_details: Record<string, any>;
+  timeframe: string;
+  valid_until: string;
+  key_signals: string[];
+  market_condition: string;
+  entry_zones?: {
+    optimal_entry?: number;
+    entry_range?: number[];
+    stop_loss?: number;
+    take_profit_1?: number;
+    take_profit_2?: number;
+  };
+  risk_reward?: {
+    risk_amount: number;
+    reward_amount: number;
+    risk_reward_ratio: number;
+    favorable: boolean;
+  };
+}
+
+export interface PatternData {
+  patterns: Array<{
+    type: string;
+    confidence: number;
+    signal: string;
+    description: string;
+  }>;
+  divergences: Array<{
+    type: string;
+    indicator: string;
+    confidence: number;
+    description: string;
+  }>;
+}
+
+export interface TimeframeAnalysis {
+  indicators: TechnicalIndicators;
+  signals: SignalAnalysis;
+  patterns: PatternData;
+  config: {
+    period: string;
+    interval: string;
+    description: string;
+    trader_type: string;
+    signal_validity: string;
+  };
+}
+
+export interface EnhancedTechnicalResult {
+  technical_analyses?: Record<string, TimeframeAnalysis>;
+  timeframe_alignment?: {
+    score: number;
+    interpretation: string;
+  };
+  all_patterns?: Record<string, PatternData>;
+  all_signals?: Record<string, SignalAnalysis>;
+  technical_analysis?: string;
+  recommended_timeframe?: string;
 }
 
 export interface MacroIndicators {

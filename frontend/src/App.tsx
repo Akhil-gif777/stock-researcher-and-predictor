@@ -4,15 +4,17 @@ import { AgentProgress, getAgentsList } from "./components/AgentProgress";
 import { StockChart } from "./components/StockChart";
 import { ResultsTabs } from "./components/ResultsTabs";
 import { RecommendationSection } from "./components/RecommendationSection";
+import { EnhancedTechnicalAnalysis } from "./components/EnhancedTechnicalAnalysis";
 import { motion } from "motion/react";
 import { TrendingUp, Sparkles, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { stockAnalysisAPI } from "./services/api";
-import type { 
-  InvestmentStyle, 
-  StockAnalysisResult, 
+import type {
+  InvestmentStyle,
+  StockAnalysisResult,
   AgentUpdate,
-  ChartDataResponse 
+  ChartDataResponse,
+  TechnicalConfig
 } from "./types/api";
 
 export default function App() {
@@ -292,8 +294,15 @@ export default function App() {
               </motion.div>
             )}
 
-            <ResultsTabs 
+            <ResultsTabs
               analysisResult={analysisResult}
+            />
+
+            {/* Enhanced Technical Analysis Section */}
+            <EnhancedTechnicalAnalysis
+              symbol={analysisResult.symbol}
+              analysisResult={analysisResult}
+              isAnalyzing={isAnalyzing}
             />
 
             <RecommendationSection

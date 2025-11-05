@@ -1,0 +1,7 @@
+{
+  "hooks": {
+    "SessionStart": {
+      "command": "cat claude.md 2>/dev/null && echo '\n---\n✓ Project context loaded from claude.md' || echo '⚠ claude.md not found in project root'"
+    }
+  }
+}
